@@ -75,7 +75,7 @@ def import_properties_excel(excel_file, coeff_size=None, invert=False):
             # Convert to a numpy array and select required coefficients
             temp_coeff = temp_coeff.to_numpy()
 
-            matrix_coeff[i, :, :] = temp_coeff[0:coeff_size, 0:coeff_size]
+            matrix_coeff[:, :, i] = temp_coeff[0:coeff_size, 0:coeff_size]
 
         # Read in the time constants
         time_consts = pd.read_excel(excel_loc, header=None,
@@ -165,7 +165,7 @@ def StoC(S0, S_mats, lambdas, coeff_size):
     for m in range(0, final_num_coeff):
         for i in range(0, coeff_size):
             for j in range(0, coeff_size):
-                C_mats[m, i, j] = (
+                C_mats[i, j, m] = (
                     (L2_star[i, m]*L2_star[j, m]) / L3_star[m, m])
 
         rhos[m] = L3_star[m, m] / B_idnet[m, m]
@@ -254,7 +254,7 @@ def CtoS(C0, C_mats, rhos, coeff_size):
     for m in range(0, final_num_coeff):
         for i in range(0, coeff_size):
             for j in range(0, coeff_size):
-                S_mats[m, i, j] = (
+                S_mats[i, j, m] = (
                     (A2_star[i, m] * A2_star[j, m]) / A3_star[m, m])
 
         lambdas[m] = A3_star[m, m] / B_idnet[m, m]
@@ -288,13 +288,15 @@ def modulus_at_time(M0, M_mats, time_const, time, property):
 
     # Number of coefficient matrices
     num_coeff = len(M_mats)
+    # Reshape time constats to take advantage numpy
+    time_const = time_const.reshape(num_coeff, 1, 1)
 
     # Funtion for matrix relaxation modulus at given time
     def relax_time(M_mats, rhos, time): return M_mats * \
-        (np.exp(-1 * time * rhos.reshape(num_coeff, 1, 1)))
+        (np.exp(-1 * time * rhos))
     # Funtion for matrix creep modulus at given time
     def creep_time(M_mats, lambdas, time): return M_mats * \
-        (1 - np.exp(-1 * time * lambdas.reshape(num_coeff, 1, 1)))
+        (1 - np.exp(-1 * time * lambdas))
 
     # Sets the proper relax or creep function to the variable time_func
     if property == "relax":
@@ -302,6 +304,7 @@ def modulus_at_time(M0, M_mats, time_const, time, property):
     elif property == "creep":
         time_func = creep_time
     else:
+        # Raise an exception if a proper property is not passed
         raise Exception('Expected "relax" or "creep" proptery')
 
     # Caluclates the modulus at the given time for each matrix
