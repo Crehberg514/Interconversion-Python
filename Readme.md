@@ -1,8 +1,3 @@
-<iframe src="/assets/Bokeh/plot.html"
-    sandbox="allow-same-origin allow-scripts"
-    width="100%"
-    height="500"
-    scrolling="no"
-    seamless="seamless"
-    frameborder="0">
-</iframe>
+{% include /custom/bokeh_plots.html %}
+
+<div class="bk-root" id="8ecebe95-7d20-46b3-8ee1-8f36a7ca567f" data-root-id="128499"></div>
