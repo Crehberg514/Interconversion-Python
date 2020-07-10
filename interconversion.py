@@ -1,12 +1,13 @@
 """
+Summary: Python library to interconvert anisotropic material functions.
+
 Name: anisotropic-interconversion
-Description: Python library to interconvert anisotropic
-             relaxation and creep prony series
+
 Author: Christopher Rehberg
 Email: christopher.rehberg@knights.ucf.edu
 """
 
-# External libaries to run the viscoelastic interconversion library
+# External libraries to run the viscoelastic interconversion library
 import numpy as np
 import pandas as pd
 import scipy.integrate as integrate
@@ -15,9 +16,17 @@ from numpy import linalg as la
 
 
 def import_properties_excel(excel_file, coeff_size=None, invert=False):
-    """Import matrices and creep/relaxation times from an excel
-       format with a specific format for this library
+    """Import prony series coefficient matrices along with time constants from excel.
 
+    Uses a specifically formatted excel document to extract the material function
+    matrix coefficients along with time series, and potentially the dim of
+    the square matrix.
+
+    Time constants should be in an inverted form. If not, setting the invert
+    flag, default to False, will invert the time constants for you.
+
+    If coeff_size is None, will read the dim size from the matrix
+    If an integer value is given, it will be used instead.
 
     Parameters
     ----------
@@ -37,11 +46,10 @@ def import_properties_excel(excel_file, coeff_size=None, invert=False):
     time_consts : numpy.array
         inverted time constants
     coeff_size : int
-        Number of coefficent matrices
+        Number of coefficient matrices
     """
-
     # Open the excel file with viscoelastic material properties
-    with open(excel_file, 'br') as excel_loc:
+    with open(excel_file, 'br') as excel_loc: # This is a test to show Sara
 
         # Read in the number of matrix coefficients, and set as an integer
         num_coeff = pd.read_excel(excel_loc, header=None, usecols=[1], nrows=1)
@@ -54,7 +62,7 @@ def import_properties_excel(excel_file, coeff_size=None, invert=False):
                 excel_loc, header=None, usecols=[3], nrows=1)
             coeff_size = int(coeff_size.values)
 
-        # Read in the instantious coefficient as a size of 6x6
+        # Read in the instantaneous coefficient as a size of 6x6
         mat0 = pd.read_excel(excel_loc, header=None,
                              usecols=[0, 1, 2, 3, 4, 5], nrows=6, skiprows=5)
         # Change from dataframe to a numpy array
@@ -62,7 +70,7 @@ def import_properties_excel(excel_file, coeff_size=None, invert=False):
         # Select only the required coefficients
         mat0 = mat0[:coeff_size, 0:coeff_size]
 
-        # Create an empy array to store coefficients
+        # Create an empty array to store coefficients
         matrix_coeff = np.empty((num_coeff, coeff_size, coeff_size))
 
         for i in range(num_coeff):
@@ -86,7 +94,7 @@ def import_properties_excel(excel_file, coeff_size=None, invert=False):
         time_consts = time_consts.to_numpy()
         time_consts = np.reshape(time_consts, num_coeff)
 
-        # Invert time consts if required
+        # Invert time constants if required
         if(invert):
             time_consts = 1 / time_consts
 
@@ -94,10 +102,11 @@ def import_properties_excel(excel_file, coeff_size=None, invert=False):
 
 
 def StoC(S0, S_mats, lambdas, coeff_size):
-    """Converts prony series creep complance to relaxtion modulus
-       using Cholesky decomposition. Using algorithm 4 of "Interconversion of
-       linearly viscoelastic material functions expressed as Prony series"
+    """Convert prony series creep compliance to relaxation modulus.
 
+    Python implementation of algorithm 4 from "Interconversion of linearly
+    viscoelastic material functions expressed as Prony series." This version is
+    not limited to a 6 by 6 matrix, but to any square matrix.
 
     Parameters
     ----------
@@ -115,15 +124,14 @@ def StoC(S0, S_mats, lambdas, coeff_size):
     C0 : numpy.array
         Equilibrium relaxation
     C_mats : numpy.array
-        Relaxtion modulus coefficient
+        Relaxation modulus coefficient
     rhos : numpy.array
         Relaxation time constants
     """
-
-    # Number of coefficents
+    # Number of coefficients
     num_coeff = len(S_mats)
 
-    # Final amount of coefficents returned, used to size different variables
+    # Final amount of coefficients returned, used to size different variables
     final_num_coeff = coeff_size * num_coeff
 
     # Following the step by step formula given by the paper
@@ -156,10 +164,10 @@ def StoC(S0, S_mats, lambdas, coeff_size):
     L2_star = PT @ L2.T
     L2_star = L2_star.T
 
-    # Preallocate a 3d numpy array for the coefficent matrices
+    # Pre-allocate a 3d numpy array for the coefficient matrices
     C_mats = np.empty((final_num_coeff, coeff_size, coeff_size))
 
-    # Preallocate a numpy array for the time consts
+    # Pre-allocate a numpy array for the time consts
     rhos = np.zeros(final_num_coeff)
 
     for m in range(0, final_num_coeff):
@@ -179,7 +187,7 @@ def StoC(S0, S_mats, lambdas, coeff_size):
 
 
 def CtoS(C0, C_mats, rhos, coeff_size):
-    """Converts prony series relaxtion modulus to creep complance
+    """Converts prony series relaxation modulus to creep compliance
        using Cholesky decomposition. Using algorithm 3 of "Interconversion of
        linearly viscoelastic material functions expressed as Prony series"
 
@@ -189,9 +197,9 @@ def CtoS(C0, C_mats, rhos, coeff_size):
     C0 : numpy.array
         Equilibrium relaxation
     C_mats : numpy.array
-        Relaxtion modulus coefficient
+        Relaxation modulus coefficient
     rhos : numpy.array
-        Relaxtion time constants
+        Relaxation time constants
     coeff_size : int
         The size dim of the the matrix i.e. 6 if 6x6
 
@@ -205,10 +213,10 @@ def CtoS(C0, C_mats, rhos, coeff_size):
         Creep time constants
     """
 
-    # Number of coefficents
+    # Number of coefficients
     num_coeff = len(C_mats)
 
-    # Final amount of coefficents returned, used to size different variables
+    # Final amount of coefficients returned, used to size different variables
     final_num_coeff = coeff_size * num_coeff
 
     # Following the step by step formula given by the paper
@@ -245,10 +253,10 @@ def CtoS(C0, C_mats, rhos, coeff_size):
 
     S0 = A1
 
-    # Preallocate a 3d numpy array for the coefficent matrices
+    # Pre-allocate a 3d numpy array for the coefficient matrices
     S_mats = np.empty((final_num_coeff, coeff_size, coeff_size))
 
-    # Preallocate a numpy array for the time consts
+    # Pre-allocate a numpy array for the time consts
     lambdas = np.zeros(final_num_coeff)
 
     for m in range(0, final_num_coeff):
@@ -289,10 +297,10 @@ def modulus_at_time(M0, M_mats, time_const, time, property):
     # Number of coefficient matrices
     num_coeff = len(M_mats)
 
-    # Funtion for matrix relaxation modulus at given time
+    # Function for matrix relaxation modulus at given time
     def relax_time(M_mats, rhos, time): return M_mats * \
         (np.exp(-1 * time * rhos.reshape(num_coeff, 1, 1)))
-    # Funtion for matrix creep modulus at given time
+    # Function for matrix creep modulus at given time
     def creep_time(M_mats, lambdas, time): return M_mats * \
         (1 - np.exp(-1 * time * lambdas.reshape(num_coeff, 1, 1)))
 
@@ -302,9 +310,9 @@ def modulus_at_time(M0, M_mats, time_const, time, property):
     elif property == "creep":
         time_func = creep_time
     else:
-        raise Exception('Expected "relax" or "creep" proptery')
+        raise Exception('Expected "relax" or "creep" property')
 
-    # Caluclates the modulus at the given time for each matrix
+    # Calculates the modulus at the given time for each matrix
     mod_time = time_func(M_mats, time_const, time)
     # Sums each matrix together
     mod_time = np.sum(mod_time, axis=0)
@@ -333,7 +341,7 @@ def nearestPD(A):
     Returns
     -------
     A3: numpy.array
-        Pos def matrix
+        Positive-definite matrix
     """
 
     B = (A + A.T) / 2
@@ -382,7 +390,7 @@ def isPD(B):
 
 
 def pos_def_update(M0, M_mats):
-    """Checks a matrices for positive-definitness. If matrix is not
+    """Checks a matrices for positive-definiteness. If matrix is not
     positive-definite, finds nearest positive-definite matrix and replaces
 
     Parameters
@@ -415,16 +423,16 @@ def pos_def_update(M0, M_mats):
 
 
 def convolution_check_mat(C0, C_mats, rhos, S0, S_mats, lambdas, t):
-    """Checks the convolution intergral of the C(t) and S(t) matrices.
-       Should be the identiy matrix of t*I
-       Also returns the errors from scipy.quad intergration
+    """Checks the convolution integral of the C(t) and S(t) matrices.
+       Should be the identity matrix of t*I
+       Also returns the errors from scipy.quad integration
 
     Parameters
     ----------
     C0 : numpy.array
         Equilibrium relaxation
     C_mats : numpy.array
-        Relaxtion modulus coefficient
+        Relaxation modulus coefficient
     rhos : numpy.array
         Relaxation time constants
     S0 : numpy.array
